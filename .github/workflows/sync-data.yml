@@ -40,23 +40,39 @@ jobs:
       run: |
         mkdir -p temp_sync
         
+        echo "Checking source repository structure..."
+        ls -la source-repo/
+        
         if [ -d "source-repo/.data" ]; then
+          echo "Found .data directory, copying files..."
+          ls -la source-repo/.data/
           cp -r source-repo/.data/* temp_sync/
+          echo "Files copied to temp_sync:"
+          ls -la temp_sync/
         else
           echo "Source .data directory not found"
           exit 1
         fi
         
+        echo "Checking current data directory..."
         if [ -d "data" ]; then
+          echo "Current data directory exists:"
+          ls -la data/
+          echo "Comparing directories..."
           if diff -r temp_sync data > /dev/null 2>&1; then
             echo "No changes detected, skipping commit"
             exit 0
+          else
+            echo "Changes detected, proceeding with sync"
           fi
+        else
+          echo "No existing data directory, will create new one"
         fi
         
         if [ -d "data" ]; then
           rm -rf data_backup
           cp -r data data_backup
+          echo "Backup created"
         fi
         
         rm -rf data
@@ -64,18 +80,35 @@ jobs:
         
         cp -r temp_sync/* data/
         
+        echo "Files synced to data directory:"
+        ls -la data/
+        
         rm -rf temp_sync
         
         echo "Data files synced successfully"
 
     - name: Commit and push changes
       run: |
+        echo "Checking git status..."
+        git status
+        
+        echo "Checking what files are in data directory..."
+        if [ -d "data" ]; then
+          ls -la data/
+        else
+          echo "data directory does not exist"
+        fi
+        
         if git diff --quiet; then
           echo "No changes to commit"
           exit 0
         fi
         
+        echo "Changes detected, adding files..."
         git add data/
+        
+        echo "Checking staged changes..."
+        git diff --cached --name-only
         
         CURRENT_DATE=$(date -u +"%Y-%m-%d")
         
