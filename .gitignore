@@ -1,0 +1,12 @@
+temp_sync/
+data_backup/
+
+.DS_Store
+Thumbs.db
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+*.log 

@@ -1,0 +1,94 @@
+name: Sync Data from forcebridge-compensation
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    environment: develop
+    
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.repository == 'Magickbase/forcebridge-compensation-records')
+    
+    steps:
+    - name: Checkout current repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+      with:
+        repository: Magickbase/forcebridge-compensation
+        token: ${{ secrets.SOURCE_REPO_TOKEN }}
+        path: source-repo
+        fetch-depth: 1
+
+    - name: Setup Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Sync data files
+      run: |
+        mkdir -p temp_sync
+        
+        if [ -d "source-repo/.data" ]; then
+          cp -r source-repo/.data/* temp_sync/
+        else
+          echo "Source .data directory not found"
+          exit 1
+        fi
+        
+        if [ -d "data" ]; then
+          if diff -r temp_sync data > /dev/null 2>&1; then
+            echo "No changes detected, skipping commit"
+            exit 0
+          fi
+        fi
+        
+        if [ -d "data" ]; then
+          rm -rf data_backup
+          cp -r data data_backup
+        fi
+        
+        rm -rf data
+        mkdir -p data
+        
+        cp -r temp_sync/* data/
+        
+        rm -rf temp_sync
+        
+        echo "Data files synced successfully"
+
+    - name: Commit and push changes
+      run: |
+        if git diff --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        
+        git add data/
+        
+        CURRENT_DATE=$(date -u +"%Y-%m-%d")
+        
+        git commit -m "feat: sync data from forcebridge-compensation - $CURRENT_DATE"
+        
+        git push origin develop
+
+    - name: Handle errors
+      if: failure()
+      run: |
+        echo "Sync failed, attempting to restore backup..."
+        if [ -d "data_backup" ]; then
+          rm -rf data
+          cp -r data_backup data
+          echo "Backup restored"
+        fi
