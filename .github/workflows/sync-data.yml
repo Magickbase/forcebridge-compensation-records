@@ -97,19 +97,21 @@ jobs:
           ls -la data/
         else
           echo "data directory does not exist"
+          exit 1
         fi
         
-        if git diff --quiet; then
-          echo "No changes to commit"
-          exit 0
-        fi
-        
-        echo "Changes detected, adding files..."
+        echo "Adding data directory to git..."
         git add data/
         
         echo "Checking staged changes..."
         git diff --cached --name-only
         
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        
+        echo "Changes detected, committing..."
         CURRENT_DATE=$(date -u +"%Y-%m-%d")
         
         git commit -m "feat: sync data from forcebridge-compensation - $CURRENT_DATE"
