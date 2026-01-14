@@ -1,0 +1,2 @@
+evmTokenAddress,evmReceiverAddress,source,amount,formattedAmount,sudtArgs,transferTxHash
+0xdAC17F958D2ee523a2206206994597C13D831ec7,0xe676392ac178d2fb39485d6c2058079cb7cfa3bf,Ethereum,95458960,95.45896 USDT|eth,0x1b89ae72b96c4f02fa7667ab46febcedf9b495737752176303ddd215d66a615a,
